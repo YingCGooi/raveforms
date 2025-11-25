@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radial Wave: Render Audio Waveforms in Radial Form</title>
+    <style>
+      body {
+        color: #fff;
+        background: #111;
+        font-family: "Google Sans Code", "monospaced";
+      }
+
+      button,
+      [type="file"],
+      ::file-selector-button {
+        color: #fff;
+        border: 1px solid;
+        width: 200px;
+        font-family: inherit;
+        font-size: 16px;
+        font-weight: 400;
+        text-transform: uppercase;
+        border-radius: 3px;
+      }
+
+      button:hover,
+      ::file-selector-button:hover {
+        filter: brightness(120%);
+        cursor: pointer;
+      }
+
+      #play {
+        color: oklch(0.9 0.1 150);
+        border-color: oklch(0.59 0.2 160);
+        background: oklch(0.4 0.2 160 / 0.33);
+      }
+
+      #stop {
+        color: oklch(0.9 0.1 20);
+        border-color: oklch(0.59 0.2 50);
+        background: oklch(0.4 0.2 50 / 0.33);
+      }
+
+      ::file-selector-button {
+        height: 100%;
+        color: oklch(0.9 0.07 220);
+        background-color: oklch(0.4 0.2 210 / 0.33);
+        border-color: oklch(0.6 0.2 210);
+      }
+
+      [type="file"] {
+        width: 50%;
+        color: oklch(0.7 0.1 220);
+        background-color: oklch(0.3 0.1 220 / 0.33);
+        border: none;
+        text-transform: none;
+        font-weight: 200;
+      }
+
+      form#waveform {
+        width: 50%;
+        background-color: oklch(0.3 0 0 / 0.33);
+        border-radius: 3px;
+      }
+
+      input[type="number"] {
+        color: #fff;
+        font-family: "Google Sans Code", monospace;
+        font-size: 16px;
+        background-color: oklch(0.4 0 0);
+        border: 1px solid oklch(0.6 0 0);
+        border-radius: 2px;
+        width: 60px;
+        text-align: right;
+      }
+
+      [value="sine"] {
+        accent-color: oklch(0.75 0.2 210);
+      }
+      [value="triangle"] {
+        accent-color: oklch(0.75 0.2 190);
+      }
+      [value="square"] {
+        accent-color: oklch(0.75 0.2 160);
+      }
+      [value="sawtooth"] {
+        accent-color: oklch(0.75 0.2 90);
+      }
+
+      section {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: space-between;
+      }
+
+      form#waveform {
+        padding: 2px 8px;
+        border: 1px solid oklch(0.4 0 0);
+      }
+
+      label > strong {
+        font-weight: 500;
+        color: oklch(0.9 0.16 80);
+      }
+
+      canvas {
+        z-index: -1;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="0" width="640" height="640"></canvas>
+    <canvas id="1" width="640" height="640"></canvas>
+    <canvas id="2" width="640" height="640"></canvas>
+    <canvas id="3" width="640" height="640"></canvas>
+    <canvas id="4" width="640" height="640"></canvas>
+    <canvas id="5" width="640" height="640"></canvas>
+    <canvas id="6" width="640" height="640"></canvas>
+    <canvas id="7" width="640" height="640"></canvas>
+    <canvas id="8" width="640" height="640"></canvas>
+    <canvas id="9" width="640" height="640"></canvas>
+    <section class="interface">
+      <form id="waveform">
+        <label
+          >SINE<input checked type="radio" name="osc" value="sine"
+        /></label>
+        <label
+          >TRIANGLE<input type="radio" name="osc" value="triangle"
+        /></label>
+        <label>SQUARE<input type="radio" name="osc" value="square" /></label>
+        <label
+          >SAWTOOTH<input type="radio" name="osc" value="sawtooth"
+        /></label>
+        <br />
+        <label>
+          <strong>OSCILLATOR FREQUENCY</strong>
+          <input type="number" name="freq" value="220" min="1" max="16000" />
+          Hz
+        </label>
+      </form>
+      <input id="fileinput" type="file" accept="*" />
+      <button id="play">Play</button>
+      <button id="stop">Stop</button>
+    </section>
+  </body>
+  <script src="./wave.js"></script>
+</html>
