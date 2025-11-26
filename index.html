@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Radial Wave: Render Audio Waveforms in Radial Form</title>
+    <link rel="icon" href="icon.png" type="image/png" />
     <style>
       body {
         color: #fff;
@@ -115,16 +116,7 @@
     </style>
   </head>
   <body>
-    <canvas id="0" width="640" height="640"></canvas>
-    <canvas id="1" width="640" height="640"></canvas>
-    <canvas id="2" width="640" height="640"></canvas>
-    <canvas id="3" width="640" height="640"></canvas>
-    <canvas id="4" width="640" height="640"></canvas>
-    <canvas id="5" width="640" height="640"></canvas>
-    <canvas id="6" width="640" height="640"></canvas>
-    <canvas id="7" width="640" height="640"></canvas>
-    <canvas id="8" width="640" height="640"></canvas>
-    <canvas id="9" width="640" height="640"></canvas>
+    <section id="canvases"><!-- all canvases go in here --></section>
     <section class="interface">
       <form id="waveform">
         <label
@@ -144,9 +136,9 @@
           Hz
         </label>
       </form>
-      <input id="fileinput" type="file" accept="*" />
       <button id="play">Play</button>
       <button id="stop">Stop</button>
+      <input id="fileinput" type="file" accept="*" />
     </section>
   </body>
   <script src="./wave.js"></script>

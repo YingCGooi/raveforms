@@ -1,12 +1,16 @@
 var ENV = {
-  fftSize: 2048,
+  fftSize: 4096,
   colorSpace: "display-p3",
   sampleRate: 88200,
-  baseFrequency: 220,
+  baseFrequency: 441,
   fadeExp: 2,
   dpr: window.devicePixelRatio,
   lineWidth: 2,
+  lineColorLCH: [1, 0, 0],
+  syncPeriodPhase: true,
 };
+
+document.onload = (e) => {};
 
 function $(selector = "") {
   return document.querySelector(selector);
@@ -66,7 +70,7 @@ class AudioSourceManager {
     this.oscillator = this.generateOSC();
     this.isPlaying = false;
   }
-  setOSCtype(type = "") {
+  setOSCtype(type = $("input[name=osc]:checked").value) {
     this.oscillator.type = type;
   }
   setOSCfreq(freq = ENV.baseFrequency) {
@@ -76,18 +80,39 @@ class AudioSourceManager {
 
 class Visualizer {
   constructor(canvases = $all("canvas"), analyzer = new AnalyserNode()) {
+    if (canvases.length == 0) {
+      this.resetCanvasElements();
+    }
     const dim = Math.min(window.innerHeight, window.innerWidth);
-    var contexts = [];
-    canvases.forEach((canvas) => {
-      const ctx = canvas.getContext("2d", { colorSpace: ENV.colorSpace });
-      contexts.push(ctx);
-    });
-    this.canvases = canvases;
-    this.contexts = contexts;
     this.dim = dim;
     this.drawRadius = (this.dim * ENV.dpr) / 2;
     this.resize(this.dim);
     this.analyzer = analyzer;
+    this.currentTimeDomain = this.getTimeDomainArray();
+    this.lastDrawnValue = 0;
+    this.lastDrawnRadian = 0;
+    this.lastTimeDomainCache = { 0: 0 };
+  }
+
+  resetCanvasElements() {
+    const numPeriods = Math.ceil(
+      ENV.fftSize / (ENV.sampleRate / ENV.baseFrequency)
+    );
+    while ($("canvas") != null) {
+      $("#canvases").removeChild($("canvas"));
+    }
+    for (let i = 0; i < numPeriods; i++) {
+      let canvas = document.createElement("canvas");
+      canvas.id = `${i}`;
+      $("#canvases").appendChild(canvas);
+    }
+    this.canvases = $all("canvas");
+    this.contexts = [];
+    this.canvases.forEach((canvas) => {
+      const ctx = canvas.getContext("2d", { colorSpace: ENV.colorSpace });
+      this.contexts.push(ctx);
+    });
+    return this.canvases, this.contexts;
   }
 
   scaleResolutionTo(dpr = 2, canvas, ctx) {
@@ -115,12 +140,28 @@ class Visualizer {
     this.dim = dimension;
   }
 
-  computePoints(data = new Float32Array(), i = 1, samplesPerPeriod = 0) {
+  getTimeDomainArray(shouldCache = true) {
+    let data = new Float32Array(ENV.fftSize);
+    this.analyzer.getFloatTimeDomainData(data);
+    this.lastTimeDomainCache = {}; // reset cache
+    shouldCache &&
+      data.forEach((v, i) => {
+        this.lastTimeDomainCache[v] = i;
+      });
+    return data;
+  }
+
+  computePoints(
+    data = new Float32Array(),
+    i = 1,
+    offsetRadian = 0,
+    samplesPerPeriod = ENV.sampleRate / ENV.baseFrequency
+  ) {
     const RADIANS_PER_SAMPLE = (2 * Math.PI) / samplesPerPeriod;
     let r0 = data[i - 1] * this.drawRadius;
     let r1 = data[i] * this.drawRadius;
-    let th0 = (i - 1) * RADIANS_PER_SAMPLE;
-    let th1 = i * RADIANS_PER_SAMPLE;
+    let th0 = (i - 1) * RADIANS_PER_SAMPLE + offsetRadian;
+    let th1 = i * RADIANS_PER_SAMPLE + offsetRadian;
 
     th0 = r0 > 0 ? th0 : th0 + Math.PI;
     th1 = r1 > 0 ? th1 : th1 + Math.PI;
@@ -131,31 +172,37 @@ class Visualizer {
     ];
   }
 
-  draw(currentTime) {
-    let data = new Float32Array(ENV.fftSize);
-    this.analyzer.getFloatTimeDomainData(data);
-    data = data.reverse(); // draw waveform from last to first point
+  findOffsetIndex() {
+    if (Object.keys(this.lastTimeDomainCache) > 1) {
+      return this.lastTimeDomainCache[this.lastDrawnValue];
+    }
+    return 0;
+  }
 
+  draw(offsetIndex = 0, offsetRadian = this.lastDrawnRadian) {
+    const data = this.getTimeDomainArray();
+    offsetIndex = this.findOffsetIndex();
     this.contexts.forEach((ctx) => ctx.beginPath());
 
-    for (let i = 1; i < ENV.fftSize - 1; i++) {
+    for (let i = 1 + offsetIndex; i < ENV.fftSize - 1; i++) {
       const SAMPLES_PER_PERIOD = ENV.sampleRate / ENV.baseFrequency;
       let [[r0, r1], [th0, th1]] = this.computePoints(
         data,
         i,
-        SAMPLES_PER_PERIOD
+        offsetRadian,
+        this.canvases.length
       );
       let period = Math.floor(i / SAMPLES_PER_PERIOD);
-      if (period >= this.canvases.length) {
-        break;
-      }
       let ctx = this.contexts[period];
       if (i % SAMPLES_PER_PERIOD < 1) {
-        ctx.strokeStyle = this.strokeColor(1, 0, 0, period);
+        ctx.strokeStyle = this.strokeColor(ENV.lineColorLCH, period);
         ctx.lineWidth = ENV.lineWidth;
       }
       ctx.moveTo(r0 * Math.cos(th0), r0 * Math.sin(th0));
       ctx.lineTo(r1 * Math.cos(th1), r1 * Math.sin(th1));
+      this.lastDrawnValue = data[i];
+      this.lastDrawnRadian = th1;
+      // console.info({ lastVal: this.lastDrawnValue, lastRad: this.lastDrawnRadian });
     }
     this.contexts.forEach((ctx) => ctx.stroke() && ctx.closePath());
   }
@@ -172,15 +219,27 @@ class Visualizer {
     }
   }
 
-  strokeColor(l, c, h, period = 0) {
-    return `oklch(${l} ${c} ${h}/ ${Math.abs(
-      0.01 * (period - 10) ** ENV.fadeExp
-    )})`;
+  strokeColor([l, c, h], period = 0, periods = 10) {
+    return `oklch(${l} ${c} ${h}/ ${Math.abs(period / periods)})`;
   }
 }
 
 const manager = new AudioSourceManager();
 const visualizer = new Visualizer($all("canvas"), manager.analyzer);
+
+const freq = $("input[name=freq]");
+freq.onchange = (e) => manager.setOSCfreq(freq.value);
+let lastAnimationID = 0;
+let isPlaying = false;
+
+const drawFrames = (currentTime) => {
+  if (manager.isPlaying) {
+    visualizer.clear();
+    visualizer.draw(0);
+    lastAnimationID = requestAnimationFrame(drawFrames); // recurse
+  }
+  return lastAnimationID;
+};
 
 $("#fileinput").onchange = (event) => {
   const r = new FileReader();
@@ -202,24 +261,8 @@ $all("input[name=osc]").forEach((radio) => {
   };
 });
 
-const freq = $("input[name=freq]");
-freq.onchange = (e) => manager.setOSCfreq(freq.value);
-let lastAnimationID = 0;
-let isPlaying = false;
-let elapsedSeconds = 0;
-
-const drawFrames = (currentTime) => {
-  elapsedSeconds = currentTime;
-  if (manager.isPlaying) {
-    visualizer.clear();
-    visualizer.draw(currentTime);
-    lastAnimationID = requestAnimationFrame(drawFrames); // recurse
-    console.info({ lastAnimationID, currentTime });
-  }
-  return lastAnimationID;
-};
-
 $("#play").addEventListener("click", (e) => {
+  manager.setOSCtype();
   manager.setOSCfreq(freq.value);
   manager.playOSC();
   drawFrames(0);
