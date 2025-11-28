@@ -1,8 +1,8 @@
 var ENV = {
-  fftSize: 4096,
+  fftSize: 2048,
   colorSpace: "display-p3",
-  sampleRate: 88200,
-  baseFrequency: 441,
+  sampleRate: 22050,
+  baseFrequency: 220,
   fadeExp: 2,
   dpr: window.devicePixelRatio,
   lineWidth: 2,
@@ -154,55 +154,59 @@ class Visualizer {
   computePoints(
     data = new Float32Array(),
     i = 1,
-    offsetRadian = 0,
-    samplesPerPeriod = ENV.sampleRate / ENV.baseFrequency
+    SAMPLES_PER_PERIOD = ENV.sampleRate / ENV.baseFrequency
   ) {
-    const RADIANS_PER_SAMPLE = (2 * Math.PI) / samplesPerPeriod;
+    const RADIANS_PER_SAMPLE = (2 * Math.PI) / SAMPLES_PER_PERIOD;
     let r0 = data[i - 1] * this.drawRadius;
     let r1 = data[i] * this.drawRadius;
-    let th0 = (i - 1) * RADIANS_PER_SAMPLE + offsetRadian;
-    let th1 = i * RADIANS_PER_SAMPLE + offsetRadian;
+    let th0 =
+      ((i - 1 - this.findOffsetIndex()) * RADIANS_PER_SAMPLE) % (2 * Math.PI);
+    let th1 =
+      ((i - this.findOffsetIndex()) * RADIANS_PER_SAMPLE) % (2 * Math.PI);
 
     th0 = r0 > 0 ? th0 : th0 + Math.PI;
     th1 = r1 > 0 ? th1 : th1 + Math.PI;
     [r0, r1] = [Math.abs(r0), Math.abs(r1)];
     return [
       [r0, r1],
-      [th0, th1],
+      [th0 + this.offsetRadian(), th1 + this.offsetRadian()],
     ];
   }
 
   findOffsetIndex() {
-    if (Object.keys(this.lastTimeDomainCache) > 1) {
-      return this.lastTimeDomainCache[this.lastDrawnValue];
+    const i = this.lastTimeDomainCache[this.lastDrawnValue];
+    if (i == undefined) {
+      return 0;
     }
-    return 0;
+    return i;
   }
 
-  draw(offsetIndex = 0, offsetRadian = this.lastDrawnRadian) {
-    const data = this.getTimeDomainArray();
-    offsetIndex = this.findOffsetIndex();
-    this.contexts.forEach((ctx) => ctx.beginPath());
+  offsetRadian() {
+    return this.lastDrawnRadian % (2 * Math.PI);
+  }
 
-    for (let i = 1 + offsetIndex; i < ENV.fftSize - 1; i++) {
+  draw() {
+    const data = this.getTimeDomainArray();
+    this.contexts.forEach((ctx) => ctx.beginPath());
+    console.info({
+      offsetI: this.findOffsetIndex(),
+      lastDrawnRaw: this.lastDrawnValue,
+      offsetRad: this.offsetRadian(),
+      lastDrawnRad: this.lastDrawnRadian,
+    });
+
+    for (let i = this.findOffsetIndex(); i < ENV.fftSize; i++) {
       const SAMPLES_PER_PERIOD = ENV.sampleRate / ENV.baseFrequency;
-      let [[r0, r1], [th0, th1]] = this.computePoints(
-        data,
-        i,
-        offsetRadian,
-        this.canvases.length
-      );
+      let [[r0, r1], [th0, th1]] = this.computePoints(data, i);
       let period = Math.floor(i / SAMPLES_PER_PERIOD);
       let ctx = this.contexts[period];
-      if (i % SAMPLES_PER_PERIOD < 1) {
-        ctx.strokeStyle = this.strokeColor(ENV.lineColorLCH, period);
-        ctx.lineWidth = ENV.lineWidth;
-      }
+      ctx.strokeStyle = this.strokeColor(ENV.lineColorLCH, period);
+      ctx.lineWidth = ENV.lineWidth;
       ctx.moveTo(r0 * Math.cos(th0), r0 * Math.sin(th0));
       ctx.lineTo(r1 * Math.cos(th1), r1 * Math.sin(th1));
       this.lastDrawnValue = data[i];
       this.lastDrawnRadian = th1;
-      // console.info({ lastVal: this.lastDrawnValue, lastRad: this.lastDrawnRadian });
+      console.info({ i, r1, th1, period, SAMPLES_PER_PERIOD });
     }
     this.contexts.forEach((ctx) => ctx.stroke() && ctx.closePath());
   }
