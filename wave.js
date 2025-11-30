@@ -1,11 +1,11 @@
 var ENV = {
   fftSize: 2048,
   colorSpace: "display-p3",
-  sampleRate: 22050,
+  sampleRate: 44100,
   baseFrequency: 220,
-  fadeExp: 2,
+  alphaExponent: 2,
   dpr: window.devicePixelRatio,
-  lineWidth: 2,
+  lineWidth: 3,
   lineColorLCH: [1, 0, 0],
   syncPeriodPhase: true,
 };
@@ -166,19 +166,17 @@ class Visualizer {
     let th0 = ((i - 1) * RADIANS_PER_SAMPLE) % (2 * Math.PI);
     let th1 = (i * RADIANS_PER_SAMPLE) % (2 * Math.PI);
 
-    th0 = r0 > 0 ? th0 : th0 + Math.PI;
-    th1 = r1 > 0 ? th1 : th1 + Math.PI;
-    [r0, r1] = [Math.abs(r0), Math.abs(r1)];
+    th0 = r0 < 0 ? th0 + Math.PI : th0;
+    th1 = r1 < 0 ? th1 + Math.PI : th1;
     return [
-      [r0, r1],
+      [Math.abs(r0), Math.abs(r1)],
       [th0 + offsetRadian, th1 + offsetRadian],
+      [r0 <= 0, r1 <= 0],
     ];
   }
 
   findLastOffsetIndex(value = 0) {
-    console.info({ value });
     const i = this.lastTimeDomainCache[value];
-    console.info({ i });
     if (i == undefined) {
       return 0;
     }
@@ -196,20 +194,28 @@ class Visualizer {
 
     const lastOffsetIndex = this.findLastOffsetIndex(data[0]);
     const offsetRadian = this.findLastRadian(lastOffsetIndex);
+    console.info({ lastOffsetIndex, offsetRadian });
 
     for (let i = 1; i < ENV.fftSize + 1; i++) {
       const SAMPLES_PER_PERIOD = ENV.sampleRate / ENV.baseFrequency;
       let period = Math.floor(i / SAMPLES_PER_PERIOD);
       let ctx = this.contexts[period];
-      ctx.strokeStyle = this.strokeColor(ENV.lineColorLCH, period);
+      ctx.strokeStyle = this.strokeColor(
+        ENV.lineColorLCH,
+        period,
+        this.contexts.length
+      );
       ctx.lineWidth = ENV.lineWidth;
 
-      let [[r0, r1], [th0, th1]] = this.computePoints(data, i, offsetRadian);
+      let [[r0, r1], [th0, th1], [_, flipped]] = this.computePoints(
+        data,
+        i,
+        offsetRadian
+      );
       ctx.moveTo(r0 * Math.cos(th0), r0 * Math.sin(th0));
       ctx.lineTo(r1 * Math.cos(th1), r1 * Math.sin(th1));
-      currTimeDomainRadians[i] = th1;
+      currTimeDomainRadians[i] = flipped ? th1 - Math.PI : th1;
     }
-    console.info({ currTimeDomainRadians });
     this.lastTimeDomainRadians = currTimeDomainRadians;
     this.cacheTimeDomainValues(data);
     this.contexts.forEach((ctx) => ctx.stroke() && ctx.closePath());
@@ -227,8 +233,8 @@ class Visualizer {
     }
   }
 
-  strokeColor([l, c, h], period = 0, periods = 10) {
-    return `oklch(${l} ${c} ${h}/ ${Math.abs(period / periods)})`;
+  strokeColor([l, c, h], period = 1, periods = this.contexts.length) {
+    return `oklch(${l} ${c} ${h}/ ${(period / periods) ** ENV.alphaExponent})`;
   }
 }
 
