@@ -35,16 +35,19 @@
         color: oklch(0.9 0.1 150);
         border-color: oklch(0.59 0.2 160);
         background: oklch(0.4 0.2 160 / 0.33);
+        flex-shrink: 2;
       }
 
       #stop {
         color: oklch(0.9 0.1 20);
         border-color: oklch(0.59 0.2 50);
         background: oklch(0.4 0.2 50 / 0.33);
+        flex-shrink: 2;
       }
 
       ::file-selector-button {
         height: 100%;
+        width: 150px;
         color: oklch(0.9 0.07 220);
         background-color: oklch(0.4 0.2 210 / 0.33);
         border-color: oklch(0.6 0.2 210);
@@ -106,6 +109,10 @@
         color: oklch(0.9 0.16 80);
       }
 
+      strong.cyan {
+        color: oklch(0.88 0.16 200);
+      }
+
       canvas {
         z-index: -1;
         position: absolute;
@@ -134,6 +141,19 @@
           <strong>OSCILLATOR FREQUENCY</strong>
           <input type="number" name="freq" value="220" min="1" max="16000" />
           Hz
+        </label>
+        <br />
+        <label>
+          <strong class="cyan">BASE FREQUENCY</strong>
+          <input
+            type="range"
+            name="base"
+            value="220"
+            min="110"
+            max="880"
+            step="10"
+          />
+          <span id="basefreq"></span>
         </label>
       </form>
       <button id="play">Play</button>

@@ -2,7 +2,7 @@ var ENV = {
   fftSize: 2048,
   colorSpace: "display-p3",
   sampleRate: 44100,
-  baseFrequency: 440,
+  baseFrequency: 220,
   alphaExponent: 2,
   dpr: window.devicePixelRatio,
   lineWidth: 3,
@@ -10,7 +10,7 @@ var ENV = {
   syncPeriodPhase: true,
 };
 
-document.onload = (e) => {};
+$("span#basefreq").innerHTML = `${ENV.baseFrequency} Hz`;
 
 function $(selector = "") {
   return document.querySelector(selector);
@@ -194,7 +194,6 @@ class Visualizer {
 
     const lastOffsetIndex = this.findLastOffsetIndex(data[0]);
     const offsetRadian = this.findLastRadian(lastOffsetIndex);
-    console.info({ lastOffsetIndex, offsetRadian });
 
     for (let i = 1; i < ENV.fftSize + 1; i++) {
       const SAMPLES_PER_PERIOD = ENV.sampleRate / ENV.baseFrequency;
@@ -273,6 +272,13 @@ $all("input[name=osc]").forEach((radio) => {
       manager.setOSCtype(e.target.value);
     }
   };
+});
+
+$("input[name=base]").addEventListener("change", (e) => {
+  ENV.baseFrequency = e.target.value;
+  $("span#basefreq").innerHTML = `${e.target.value} Hz`;
+  visualizer.resetCanvasElements();
+  visualizer.resize();
 });
 
 $("#play").addEventListener("click", (e) => {
