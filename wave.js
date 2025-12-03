@@ -2,15 +2,17 @@ var ENV = {
   fftSize: 2048,
   colorSpace: "display-p3",
   sampleRate: 44100,
-  baseFrequency: 220,
-  alphaExponent: 2,
+  baseFrequency: 98,
+  alphaExponent: 1.2,
+  blurFactor: 1,
   dpr: window.devicePixelRatio,
   lineWidth: 3,
-  lineColorLCH: [0.77, 0.2, 220],
+  lineColorLCH: [0.55, 0.22, 330],
   syncPeriodPhase: true,
+  brightnessFactor: 3,
+  hueShiftFactor: +32,
+  chromaShiftFactor: 0.1,
 };
-
-$("span#basefreq").innerHTML = `${ENV.baseFrequency} Hz`;
 
 function $(selector = "") {
   return document.querySelector(selector);
@@ -205,6 +207,9 @@ class Visualizer {
         this.contexts.length
       );
       ctx.lineWidth = ENV.lineWidth;
+      ctx.filter = `blur(${
+        ENV.blurFactor * (this.canvases.length - 1 - period)
+      }px)`;
 
       let [[r0, r1], [th0, th1], [_, flipped]] = this.computePoints(
         data,
@@ -233,7 +238,11 @@ class Visualizer {
   }
 
   strokeColor([l, c, h], period = 1, periods = this.contexts.length) {
-    return `oklch(${l} ${c} ${h}/ ${(period / periods) ** ENV.alphaExponent})`;
+    const lightness = l + (ENV.brightnessFactor / 100) * period;
+    const chroma = c + (ENV.chromaShiftFactor / 100) * period;
+    const hue = h + ENV.hueShiftFactor * period;
+    const alpha = (period / periods) ** ENV.alphaExponent;
+    return `oklch(${lightness} ${chroma} ${hue} / ${alpha})`;
   }
 }
 
@@ -241,6 +250,7 @@ const manager = new AudioSourceManager();
 const visualizer = new Visualizer($all("canvas"), manager.analyzer);
 
 const freq = $("input[name=freq]");
+freq.value = ENV.baseFrequency; // reset to base frequency at start
 freq.onchange = (e) => manager.setOSCfreq(freq.value);
 let lastAnimationID = 0;
 let isPlaying = false;
@@ -272,13 +282,6 @@ $all("input[name=osc]").forEach((radio) => {
       manager.setOSCtype(e.target.value);
     }
   };
-});
-
-$("input[name=base]").addEventListener("change", (e) => {
-  ENV.baseFrequency = e.target.value;
-  $("span#basefreq").innerHTML = `${e.target.value} Hz`;
-  visualizer.resetCanvasElements();
-  visualizer.resize();
 });
 
 $("#play").addEventListener("click", (e) => {
