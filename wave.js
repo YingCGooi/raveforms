@@ -270,9 +270,9 @@ base.onchange = (e) => {
   }
 };
 
-const freq = $("input[name=freq]");
-freq.value = ENV.baseFrequency; // reset to base frequency at start
-freq.onchange = (e) => manager.setOSCfreq(freq.value);
+const freqInput = $("input[name=freq]");
+freqInput.value = ENV.baseFrequency; // reset to base frequency at start
+freqInput.onchange = (e) => manager.setOSCfreq(freqInput.value);
 
 let lastAnimationID = 0;
 let isPlaying = false;
@@ -316,15 +316,20 @@ $all("input[name=osc]").forEach((radio) => {
 });
 
 $("#play").addEventListener("click", (e) => {
+  const editor = $("#repl").editor;
+
   if ($("#fileinput").value !== "") {
     manager.playBuffer();
     drawFrames();
-  } else if ($("#repl").editor.code !== "") {
-    $("#repl").editor.evaluate();
+  } else if (editor.code !== "") {
+    if (!editor.code.includes(".scope()")) {
+      editor.code += ".scope()"; // force scope()
+    }
+    editor.evaluate();
     setTimeout(() => drawFrames(), 300); // wait to load analyzer
   } else {
     manager.setOSCtype();
-    manager.setOSCfreq(freq.value);
+    manager.setOSCfreq(freqInput.value);
     manager.playOSC();
     drawFrames();
   }
