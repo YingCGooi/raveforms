@@ -23,21 +23,26 @@ function $all(selector = "") {
 class LocalStore {
   constructor(key = "waveflower") {
     this.key = key
-    this.lastSaved = Date.now()
+    this.lastSaved = localStorage.getItem("last_saved") || 0;
   }
   saveConfig(cfg = ENV) {
     localStorage.setItem(this.key, JSON.stringify(cfg))
+    localStorage.setItem("last_saved", Date.now())
   }
   loadConfig() {
+    if (!this.lastSaved) {
+      console.info("no configuration saved")
+      return ENV
+    }
     const cfg = localStorage.getItem(this.key)
-    console.info(cfg)
+    console.info("configuration loaded from last saved: " + this.lastSaved)
     ENV = JSON.parse(cfg) // replace ENV with stored configuration
-    this.lastSaved = Date.now()
-    return cfg
+    console.info(ENV)
+    return ENV
   }
   clearCache() {
-    localStorage.clear(key)
-    this.lastSaved = 0
+    localStorage.clear(this.key)
+    localStorage.setItem("last_saved", 0)
   }
 }
 
@@ -273,6 +278,8 @@ class Visualizer {
   }
 }
 
+const store = new LocalStore()
+store.loadConfig();
 const manager = new AudioSourceManager();
 const visualizer = new Visualizer($all("#canvases>canvas"), manager.analyzer);
 let replVisualizer = undefined;
@@ -302,11 +309,6 @@ function forceScope(editor) {
   if (!editor.code.includes(".scope()")) {
     editor.code += ".scope()"; // force scope() at the end
   }
-}
-
-const store = new LocalStore()
-if (store.lastSaved && store.lastSaved < Date.now()) {
-  store.loadConfig();
 }
 
 const drawFrames = (currentTime) => {
@@ -353,8 +355,8 @@ $("#play").addEventListener("click", (e) => {
   if ($("#fileinput").value !== "") {
     manager.playBuffer();
     drawFrames();
-  } else if (editor.code !== "") {
-    editor.forceScope();
+  } else if (editor && editor?.code !== "") {
+    forceScope(editor);
     editor.evaluate();
     if (replPlaying) {
       return; // don't overlap with existing drawFrames() recursion
@@ -373,7 +375,7 @@ $("#stop").addEventListener("click", (e) => {
   replPlaying = false;
   $("#fileinput").value !== "" && manager.stopBuffer();
   $("#fileinput").value = ""
-  $("#repl").value !== "" && $("#repl").editor.stop();
+  $("#repl").value && $("#repl").editor.stop();
   manager.isPlaying && manager.stopOSC();
 
   cancelAnimationFrame(lastAnimationID);
