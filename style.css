@@ -1,7 +1,7 @@
 body {
     color: #fff;
     background: #010101;
-    font-family: "Google Sans Code", "monospaced";
+    font-family: "Google Sans Code", monospace;
 }
 
 button,

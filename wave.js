@@ -204,9 +204,8 @@ class Visualizer {
       let ctx = this.contexts[period];
       ctx.strokeStyle = this.strokeColor(period, this.contexts.length);
       ctx.lineWidth = ENV.lineWidthStart;
-      ctx.filter = `blur(${
-        ENV.blurFactor * (this.canvases.length - 1 - period)
-      }px)`;
+      ctx.filter = `blur(${ENV.blurFactor * (this.canvases.length - 1 - period)
+        }px)`;
 
       let [[r0, r1], [th0, th1], [_, flipped]] = this.computePoints(
         data,
@@ -342,8 +341,18 @@ $("#play").addEventListener("click", (e) => {
 $("#stop").addEventListener("click", (e) => {
   replPlaying = false;
   $("#fileinput").value !== "" && manager.stopBuffer();
+  $("#fileinput").value = ""
   $("#repl").value !== "" && $("#repl").editor.stop();
   manager.isPlaying && manager.stopOSC();
 
   cancelAnimationFrame(lastAnimationID);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "F2" && !document.fullscreenElement) {
+    $("#canvases").requestFullscreen();
+  }
+  if (e.key == "ESC") {
+    document.exitFullscreen?.();
+  }
 });
