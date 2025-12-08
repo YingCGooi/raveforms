@@ -254,7 +254,8 @@ class Visualizer {
 
 const manager = new AudioSourceManager();
 const visualizer = new Visualizer($all("#canvases>canvas"), manager.analyzer);
-var replVisualizer = undefined;
+let replVisualizer = undefined;
+let analysers = {};
 
 const base = $("input[name=base]");
 base.value = ENV.baseFrequency;
@@ -273,6 +274,14 @@ const freqInput = $("input[name=freq]");
 freqInput.value = ENV.baseFrequency; // reset to base frequency at start
 freqInput.onchange = (e) => manager.setOSCfreq(freqInput.value);
 
+const editor = $("#repl").editor;
+editor.forceScope = function () {
+  if (!editor.code.includes(".scope()")) {
+    editor.code += ".scope()"; // force scope() at the end
+  }
+}
+
+// states
 let lastAnimationID = 0;
 let replPlaying = false;
 
@@ -315,15 +324,11 @@ $all("input[name=osc]").forEach((radio) => {
 });
 
 $("#play").addEventListener("click", (e) => {
-  const editor = $("#repl").editor;
-
   if ($("#fileinput").value !== "") {
     manager.playBuffer();
     drawFrames();
   } else if (editor.code !== "") {
-    if (!editor.code.includes(".scope()")) {
-      editor.code += ".scope()"; // force scope()
-    }
+    editor.forceScope();
     editor.evaluate();
     if (replPlaying) {
       return; // don't overlap with existing drawFrames() recursion
