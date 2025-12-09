@@ -46,7 +46,7 @@ button:hover,
 }
 
 [type="file"] {
-    width: 33%;
+    width: 60%;
     color: oklch(0.7 0.1 220);
     background-color: oklch(0.3 0.1 220 / 0.33);
     border: none;
@@ -60,6 +60,7 @@ form#waveform {
     width: 50%;
     background-color: oklch(0.3 0 0 / 0.33);
     border-radius: 3px;
+    text-align: right;
 }
 
 input[type="number"] {
