@@ -35,9 +35,9 @@ class LocalStore {
       return ENV
     }
     const cfg = localStorage.getItem(this.key)
-    console.info("configuration loaded from last saved: " + this.lastSaved)
     ENV = JSON.parse(cfg) // replace ENV with stored configuration
     console.info(ENV)
+    console.info("Configuration loaded from time last saved: " + (Date(this.lastSaved).toString()))
     return ENV
   }
   clearCache() {
