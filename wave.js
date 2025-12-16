@@ -8,13 +8,11 @@ var ENV = {
   dpr: window.devicePixelRatio,
   lineWidthStart: 3.3,
   lineWidthEnd: 1,
-  lineColorStartLCH: [0.5, 0.3, 290],
-  lineColorEndLCH: [0.8, 0.24, 220],
   lineColorStart: "oklch(0.5 0.3 290)",
   lineColorEnd: "oklch(0.8 0.24 220)",
+  interpolationSpace: "oklch",
   syncPeriodPhase: true,
   smoothingTimeConstant: 1,
-  interpolationSpace: "oklch"
 };
 
 function $(selector = "") {
