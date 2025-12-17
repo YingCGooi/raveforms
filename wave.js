@@ -6,8 +6,8 @@ var ENV = {
   alphaExponent: 0,
   blurFactor: 1,
   dpr: window.devicePixelRatio,
-  lineWidthStart: 3.3,
-  lineWidthEnd: 1,
+  lineWidthStart: 3.3, // start = tail of spiral
+  lineWidthEnd: 1, // end = head of spiral
   lineColorStart: "oklch(0.5 0.3 290)",
   lineColorEnd: "oklch(0.8 0.24 220)",
   interpolationSpace: "oklch",
@@ -271,7 +271,7 @@ class Visualizer {
     }
   }
 
-  calculateColorSteps(start = new Color(), end = new Color(), minSteps = 10) {
+  calculateColorSteps(start = new Color(), end = new Color(), minSteps = 16) {
     const s = start.steps(end, {
       space: ENV.interpolationSpace,
       outputSpace: ENV.interpolationSpace,
@@ -367,6 +367,11 @@ $all("input[name=osc]").forEach((radio) => {
 
 $("#play").addEventListener("click", (e) => {
   editor = $("#repl").editor;
+  // update color on start
+  visualizer.calculateColorSteps(
+    new Color(ENV.lineColorStart), 
+    new Color(ENV.lineColorEnd)
+  );
   // store.saveConfig(ENV) // TODO: fix breaking scope
   if ($("#fileinput").value !== "") {
     manager.playBuffer();
