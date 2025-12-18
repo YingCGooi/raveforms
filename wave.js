@@ -287,7 +287,7 @@ freqInput.value = ENV.baseFrequency; // reset to base frequency at start
 freqInput.onchange = (e) => manager.setOSCfreq(freqInput.value);
 
 function forceScope(editor) {
-  if (!editor.code.includes(".scope()")) {
+  if (!editor.code.trim().endsWith(".scope()")) {
     editor.code += ".scope()"; // force scope() at the end
   }
 }

@@ -29,23 +29,27 @@ button:hover,
 }
 
 #play {
+    padding: 0 12px;
     color: oklch(0.9 0.1 150);
     border-color: oklch(0.59 0.2 160);
     background: oklch(0.55 0.2 160 / 0.33);
     flex-shrink: 2;
+    min-width: min-content;
 }
 
 #stop {
+    padding: 0 12px;
     color: oklch(0.9 0.1 20);
     border-color: oklch(0.59 0.2 50);
     background: oklch(0.5 0.16 50 / 0.33);
     flex-shrink: 2;
+    min-width: min-content;
 }
 
 [type="file"] {
     width: 60%;
     color: oklch(0.7 0.1 220);
-    background-color: oklch(0.5 0.1 220 / 0.33);
+    background-color: oklch(0.5 0.1 220 / 0.4);
     border: none;
     text-transform: none;
     font-weight: 200;
@@ -60,9 +64,9 @@ button:hover,
 }
 
 form#waveform {
-    padding: 2px 8px;
+    padding: 2px 4px;
     border: 1px solid oklch(0.4 0 0);
-    width: 50%;
+    width: 66.7%;
     background-color: oklch(0.4 0 0 / 0.33);
     border-radius: 3px;
     text-align: right;
@@ -182,4 +186,21 @@ i {
 i[aria-label="sine"] {
     font-size: 2.4em;
     line-height: 1px;
+}
+
+.cm-editor::before {
+    position: absolute;
+    top: 50%;
+    transform: translate(0%, -50%);
+    right: 1rem;
+    text-align: end;
+    font-size: 0.8rem;
+    font-style: italic;
+    content: "🌀 @strudel/repl loaded - click to edit 🌀";
+    color: oklch(0.7 0 0 / 0.7);
+}
+
+.cm-editor.cm-focused::before {
+    content: '';
+    content-visibility: hidden;
 }
