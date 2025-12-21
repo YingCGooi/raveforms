@@ -46,6 +46,9 @@ class AudioSourceManager {
     this.repl = repl;
   }
   replHasCode() {
+    if (!this.repl) {
+      return false
+    }
     return this.repl.code.trim() !== '';
   }
   playREPL(forceScopeFn = () => { }) {
@@ -84,7 +87,7 @@ class AudioSourceManager {
   }
   playBuffer() {
     if (this.isFileplaying) {
-      logInfo("file buffer already playing")
+      infoLog("file buffer already playing")
       return
     }
     this.bufferSource.start();
@@ -97,7 +100,7 @@ class AudioSourceManager {
   }
   playOSC() {
     if (this.isOSCplaying) {
-      logInfo("osc already playing")
+      infoLog("osc already playing")
       return
     }
     this.oscillator.start();
@@ -331,7 +334,7 @@ freqInput.value = ENV.baseFrequency; // reset to base frequency at start
 freqInput.onchange = (e) => manager.setOSCfreq(freqInput.value);
 
 const drawFrames = (currentTime) => {
-  if (manager.isOSCplaying) {
+  if (manager.isOSCplaying || manager.isFileplaying) {
     visualizer.clear();
     visualizer.draw();
     lastAnimationID = requestAnimationFrame(drawFrames); // recurse
@@ -375,16 +378,18 @@ $("#play").addEventListener("click", (e) => {
     }, ENV.analyzerWaitDelayMs) // wait for 'analysers' object to initialize
     return
   }
-  if ($("#fileinput").value !== "") {
+  if ($("#fileinput").value !== "" && !manager.isFileplaying) {
     infoLog("file buffer start")
     manager.playBuffer();
     drawFrames();
-  } else {
-    infoLog("osc start")
-    manager.setOSCtype();
+    return
+  } else if (!manager.isOSCplaying) {
+    infoLog("osc start");
+    manager.setOSCtype($("input[name=osc]:checked").value);
     manager.setOSCfreq(freqInput.value);
     manager.playOSC();
     drawFrames();
+    return
   }
 });
 
