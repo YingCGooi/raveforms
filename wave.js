@@ -37,9 +37,10 @@ class AudioSourceManager {
     this.analyzer = this.generateAnalyzer();
     this.oscillator = this.generateOSC();
     this.bufferSource = this.generateBufferSource();
-    this.isPlaying = false;
     this.repl = null;
     this.isREPLplaying = false;
+    this.isOSCplaying = false;
+    this.isFileplaying = false;
   }
   setREPL(repl = $("#repl").editor) {
     this.repl = repl;
@@ -50,12 +51,10 @@ class AudioSourceManager {
   playREPL(forceScopeFn = () => { }) {
     forceScopeFn(this.repl);
     this.repl.evaluate();
-    this.isPlaying = true;
     this.isREPLplaying = true;
   }
   stopREPL() {
     this.repl.stop();
-    this.isPlaying = false;
     this.isREPLplaying = false;
   }
   getAnalyzer() {
@@ -84,28 +83,30 @@ class AudioSourceManager {
     ENV.sampleRate = buffer.sampleRate;
   }
   playBuffer() {
+    if (this.isFileplaying) {
+      logInfo("file buffer already playing")
+      return
+    }
     this.bufferSource.start();
-    this.isPlaying = true;
+    this.isFileplaying = true;
   }
   stopBuffer() {
-    if (!this.isPlaying) {
-      return
-    }
     this.bufferSource.stop(this.ctx.currentTime);
     this.bufferSource = this.generateBufferSource();
-    this.isPlaying = false;
+    this.isFileplaying = false;
   }
   playOSC() {
-    this.oscillator.start();
-    this.isPlaying = true;
-  }
-  stopOSC() {
-    if (!this.isPlaying) {
+    if (this.isOSCplaying) {
+      logInfo("osc already playing")
       return
     }
+    this.oscillator.start();
+    this.isOSCplaying = true;
+  }
+  stopOSC() {
     this.oscillator.stop();
     this.oscillator = this.generateOSC();
-    this.isPlaying = false;
+    this.isOSCplaying = false;
   }
   setOSCtype(type = $("input[name=osc]:checked").value) {
     this.oscillator.type = type;
@@ -180,6 +181,8 @@ class Visualizer {
       const ctx = this.contexts[i];
       canvas.width = dimension; // stretch the canvas to viewport
       canvas.height = dimension;
+      this.dim = dimension;
+      this.drawRadius = (dimension * ENV.dpr) / 2;
       this.scaleResolutionTo(ENV.dpr, canvas, ctx);
       this.resetDrawOrigin(ctx);
     });
@@ -307,6 +310,11 @@ window.onload = () => {
 const visualizer = new Visualizer("#canvases", manager.analyzer);
 let lastAnimationID = 0;
 
+window.onresize = () => {
+  visualizer.resetCanvasElements();
+  visualizer.resize();
+}
+
 const base = $("input[name=base]");
 base.value = ENV.baseFrequency;
 base.onchange = (e) => {
@@ -323,7 +331,7 @@ freqInput.value = ENV.baseFrequency; // reset to base frequency at start
 freqInput.onchange = (e) => manager.setOSCfreq(freqInput.value);
 
 const drawFrames = (currentTime) => {
-  if (manager.isPlaying) {
+  if (manager.isOSCplaying) {
     visualizer.clear();
     visualizer.draw();
     lastAnimationID = requestAnimationFrame(drawFrames); // recurse
@@ -352,10 +360,7 @@ $all("input[name=osc]").forEach((radio) => {
 });
 
 $("#play").addEventListener("click", (e) => {
-  visualizer.calculateColorSteps(
-    new Color(ENV.lineColorStart),
-    new Color(ENV.lineColorEnd)
-  );
+  visualizer.calculateColorSteps(new Color(ENV.lineColorStart), new Color(ENV.lineColorEnd));
   if (manager.replHasCode()) {
     manager.playREPL(() => { });
     setTimeout(() => {
@@ -370,15 +375,12 @@ $("#play").addEventListener("click", (e) => {
     }, ENV.analyzerWaitDelayMs) // wait for 'analysers' object to initialize
     return
   }
-  if (manager.isPlaying) {
-    infoLog("already playing")
-    return
-  }
-  infoLog("start")
   if ($("#fileinput").value !== "") {
+    infoLog("file buffer start")
     manager.playBuffer();
     drawFrames();
   } else {
+    infoLog("osc start")
     manager.setOSCtype();
     manager.setOSCfreq(freqInput.value);
     manager.playOSC();
@@ -391,9 +393,9 @@ $("#stop").addEventListener("click", (e) => {
   if (f.value !== "") {
     f.value = ""
   }
-  manager.stopREPL();
-  manager.stopOSC();
-  manager.stopBuffer();
+  manager.isREPLplaying && manager.stopREPL();
+  manager.isOSCplaying && manager.stopOSC();
+  manager.isFileplaying && manager.stopBuffer();
   infoLog("stop");
   cancelAnimationFrame(lastAnimationID);
 });
