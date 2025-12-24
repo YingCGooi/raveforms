@@ -1,3 +1,5 @@
+const MAIN_CLASS = "main";
+
 var ENV = {
   fftSize: 2048,
   colorSpace: "display-p3",
@@ -13,11 +15,11 @@ var ENV = {
   interpolationSpace: "oklch",
   syncPeriodPhase: true,
   smoothingTimeConstant: 1,
-  analyzerWaitDelayMs: 300
+  analyzerWaitDelayMs: 300,
 };
 
-function infoLog(msg = '') {
-  console.info("[waveflower] " + msg)
+function infoLog(msg = "") {
+  console.info("[waveflower] " + msg);
 }
 
 function $(selector = "") {
@@ -47,11 +49,11 @@ class AudioSourceManager {
   }
   replHasCode() {
     if (!this.repl) {
-      return false
+      return false;
     }
-    return this.repl.code.trim() !== '';
+    return this.repl.code.trim() !== "";
   }
-  playREPL(forceScopeFn = () => { }) {
+  playREPL(forceScopeFn = () => {}) {
     forceScopeFn(this.repl);
     this.repl.evaluate();
     this.isREPLplaying = true;
@@ -87,8 +89,8 @@ class AudioSourceManager {
   }
   playBuffer() {
     if (this.isFileplaying) {
-      infoLog("file buffer already playing")
-      return
+      infoLog("file buffer already playing");
+      return;
     }
     this.bufferSource.start();
     this.isFileplaying = true;
@@ -100,8 +102,8 @@ class AudioSourceManager {
   }
   playOSC() {
     if (this.isOSCplaying) {
-      infoLog("osc already playing")
-      return
+      infoLog("osc already playing");
+      return;
     }
     this.oscillator.start();
     this.isOSCplaying = true;
@@ -122,9 +124,11 @@ class AudioSourceManager {
 class Visualizer {
   constructor(
     sectionID = "#canvases",
+    className = "",
     analyzer = new AnalyserNode()
   ) {
     this.sectionID = sectionID;
+    this.className = className;
     this.resetCanvasElements();
     const dim = Math.min(window.innerHeight, window.innerWidth);
     this.dim = dim;
@@ -140,20 +144,21 @@ class Visualizer {
     this.calculateColorSteps(
       new Color(ENV.lineColorStart),
       new Color(ENV.lineColorEnd)
-    )
+    );
   }
 
   resetCanvasElements() {
     const numPeriods = Math.ceil(
       ENV.fftSize / (ENV.sampleRate / ENV.baseFrequency)
     );
-    const canvasSelector = `${this.sectionID}>canvas`
+    const canvasSelector = `${this.sectionID}>canvas`;
     while ($(canvasSelector) != null) {
       $(this.sectionID).removeChild($(canvasSelector));
     }
     for (let i = 0; i < numPeriods; i++) {
       let canvas = document.createElement("canvas");
       canvas.id = `${i}`;
+      canvas.classList.add(this.className);
       $(this.sectionID).appendChild(canvas);
     }
     this.canvases = $all(canvasSelector);
@@ -252,8 +257,9 @@ class Visualizer {
       let ctx = this.contexts[period];
       ctx.strokeStyle = this.strokeColorJS(period, this.contexts.length);
       ctx.lineWidth = this.lineWidth(period, this.contexts.length);
-      ctx.filter = `blur(${ENV.blurFactor * (this.canvases.length - 1 - period)
-        }px)`;
+      ctx.filter = `blur(${
+        ENV.blurFactor * (this.canvases.length - 1 - period)
+      }px)`;
 
       let [[r0, r1], [th0, th1], [_, flipped]] = this.computePoints(
         data,
@@ -286,15 +292,15 @@ class Visualizer {
       space: ENV.interpolationSpace,
       outputSpace: ENV.interpolationSpace,
       maxDeltaE: 120,
-      steps: minSteps // min number of steps
-    })
-    this.colorSteps = s.map(c => c.toString());
+      steps: minSteps, // min number of steps
+    });
+    this.colorSteps = s.map((c) => c.toString());
     return this.colorSteps;
   }
 
   strokeColorJS(period = 0, periods = this.contexts.length) {
     const pos = (period / periods) * this.colorSteps.length;
-    const i = Math.floor(pos)
+    const i = Math.floor(pos);
     return this.colorSteps[i];
   }
 
@@ -303,113 +309,3 @@ class Visualizer {
     return ENV.lineWidthStart + period * widthStep;
   }
 }
-
-const manager = new AudioSourceManager();
-window.onload = () => {
-  if (params.get('repl')) {
-    manager.setREPL($("#repl").editor);
-  }
-};
-const visualizer = new Visualizer("#canvases", manager.analyzer);
-let lastAnimationID = 0;
-
-window.onresize = () => {
-  visualizer.resetCanvasElements();
-  visualizer.resize();
-}
-
-const base = $("input[name=base]");
-base.value = ENV.baseFrequency;
-base.onchange = (e) => {
-  ENV.baseFrequency = Number(e.target.value);
-  if (ENV.baseFrequency > 110) { ENV.fftSize / 2 };
-  let v = visualizer;
-  v.resetCanvasElements();
-  v.resize();
-  infoLog(`base period set to 1/${e.target.value}s`);
-};
-
-const freqInput = $("input[name=freq]");
-freqInput.value = ENV.baseFrequency; // reset to base frequency at start
-freqInput.onchange = (e) => manager.setOSCfreq(freqInput.value);
-
-const drawFrames = (currentTime) => {
-  if (manager.isOSCplaying || manager.isFileplaying) {
-    visualizer.clear();
-    visualizer.draw();
-    lastAnimationID = requestAnimationFrame(drawFrames); // recurse
-  }
-  return lastAnimationID;
-};
-
-$("#fileinput").onchange = (event) => {
-  const r = new FileReader();
-  r.readAsArrayBuffer(event.target.files[0]);
-  r.onload = (e) => {
-    manager.ctx.decodeAudioData(
-      e.target.result,
-      (buffer) => manager.updateBuffer(buffer),
-      (err) => console.error(err)
-    );
-  };
-};
-
-$all("input[name=osc]").forEach((radio) => {
-  radio.onchange = (e) => {
-    if (e.target.checked) {
-      manager.setOSCtype(e.target.value);
-    }
-  };
-});
-
-$("#play").addEventListener("click", (e) => {
-  visualizer.calculateColorSteps(new Color(ENV.lineColorStart), new Color(ENV.lineColorEnd));
-  if (manager.replHasCode()) {
-    manager.playREPL(() => { });
-    setTimeout(() => {
-      const visualizers = []
-      for (k in analysers) {
-        if (Object.hasOwn(analysers, k)) {
-          visualizers.push(new Visualizer(null, analysers[k]))
-        }
-      }
-      // TODO: visualize inline _scope() separately
-      drawFrames();
-    }, ENV.analyzerWaitDelayMs) // wait for 'analysers' object to initialize
-    return
-  }
-  if ($("#fileinput").value !== "" && !manager.isFileplaying) {
-    infoLog("file buffer start")
-    manager.playBuffer();
-    drawFrames();
-    return
-  } else if (!manager.isOSCplaying) {
-    infoLog("osc start");
-    manager.setOSCtype($("input[name=osc]:checked").value);
-    manager.setOSCfreq(freqInput.value);
-    manager.playOSC();
-    drawFrames();
-    return
-  }
-});
-
-$("#stop").addEventListener("click", (e) => {
-  const f = $("#fileinput")
-  if (f.value !== "") {
-    f.value = ""
-  }
-  manager.isREPLplaying && manager.stopREPL();
-  manager.isOSCplaying && manager.stopOSC();
-  manager.isFileplaying && manager.stopBuffer();
-  infoLog("stop");
-  cancelAnimationFrame(lastAnimationID);
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "F2" && !document.fullscreenElement) {
-    $("#canvases").requestFullscreen();
-  }
-  if (e.key == "ESC") {
-    document.exitFullscreen?.();
-  }
-});

@@ -1,50 +1,78 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Waveflower: Audio signal visualization in radial form - @strudel/repl
+      available
+    </title>
+    <link rel="icon" href="r=sin2t_oy.png" type="image/png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WaveFlower: Render Audio Waveforms in Radial Format</title>
-  <link rel="icon" href="icon_4_flower.png" type="image/png" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-
-<body>
-  <script src="https://colorjs.io/dist/color.global.js"></script>
-  <!-- use "/color.global.min.js" for production -->
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('repl')) {
-      const strudel = document.createElement('script')
-      strudel.src = 'https://unpkg.com/@strudel/repl@latest'
-      document.body.appendChild(strudel)
-    }
-  </script>
-  <section class="interface">
-    <form id="waveform">
-      <label title="Sine"><i aria-label="sine">∿</i><input checked type="radio" name="osc" value="sine" /></label>
-      <label title="Triangle"><i aria-label="triangle">⋀⋁</i><input type="radio" name="osc" value="triangle" /></label>
-      <label title="Square"><i aria-label="square">⊓⊔</i><input type="radio" name="osc" value="square" /></label>
-      <label title="Sawtooth"><i aria-label="sawtooth">⊿⊿</i><input type="radio" name="osc" value="sawtooth" /></label>
-      <label title="Set oscillator frequency (Hz)">
-        <small>ⓘ</small> <strong>OSC</strong>
-        <input type="number" name="freq" value="220" min="1" max="16000" placeholder="Hz" />
-      </label>
-      <label title="Set base period interval (1/s)">
-        <strong>BASE</strong>
-        <input type="number" name="base" value="220" min="1" max="1210" placeholder="Hz" />
-      </label>
-    </form>
-    <fieldset>
-      <button id="play">Play</button>
-      <button id="stop">Stop</button>
-    </fieldset>
-    <input id="fileinput" type="file" accept="*" />
-  </section>
-  <section id="canvases"><!-- all canvases go in here --></section>
-  <strudel-editor id="repl"></strudel-editor>
-</body>
-<script src="./wave.js"></script>
-<link rel="stylesheet" href="override.css" />
-
+  <body>
+    <script src="https://colorjs.io/dist/color.global.js"></script>
+    <!-- use "/color.global.min.js" for production -->
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("repl")) {
+        const strudel = document.createElement("script");
+        strudel.src = "https://unpkg.com/@strudel/repl@latest";
+        document.body.appendChild(strudel);
+      }
+    </script>
+    <section class="interface">
+      <form id="waveform">
+        <label title="Sine"
+          ><i aria-label="sine">∿</i
+          ><input checked type="radio" name="osc" value="sine"
+        /></label>
+        <label title="Triangle"
+          ><i aria-label="triangle">⋀⋁</i
+          ><input type="radio" name="osc" value="triangle"
+        /></label>
+        <label title="Square"
+          ><i aria-label="square">⊓⊔</i
+          ><input type="radio" name="osc" value="square"
+        /></label>
+        <label title="Sawtooth"
+          ><i aria-label="sawtooth">⊿⊿</i
+          ><input type="radio" name="osc" value="sawtooth"
+        /></label>
+        <label title="Set oscillator frequency (Hz)">
+          <small>ⓘ</small> <strong>OSC</strong>
+          <input
+            type="number"
+            name="freq"
+            value="220"
+            min="1"
+            max="16000"
+            placeholder="Hz"
+          />
+        </label>
+        <label title="Set base period interval (1/s)">
+          <strong>BASE</strong>
+          <input
+            type="number"
+            name="base"
+            value="220"
+            min="1"
+            max="1210"
+            placeholder="Hz"
+          />
+        </label>
+      </form>
+      <fieldset>
+        <button id="play">Play</button>
+        <button id="stop">Stop</button>
+      </fieldset>
+      <input id="fileinput" type="file" accept="*" />
+    </section>
+    <section id="canvases"><!-- all canvases go in here --></section>
+    <strudel-editor id="repl"></strudel-editor>
+  </body>
+  <script src="./wave.js"></script>
+  <script src="./handlers.js"></script>
+  <link rel="stylesheet" href="override.css" />
 </html>
