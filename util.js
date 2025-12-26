@@ -86,3 +86,13 @@ function $(selector = "") {
 function $all(selector = "") {
   return document.querySelectorAll(selector);
 }
+
+function hasAny(arr = [], callback = () => {}) {
+  let has = false;
+  arr.forEach((v) => {
+    if (callback(v)) {
+      has = true;
+    }
+  });
+  return has;
+}

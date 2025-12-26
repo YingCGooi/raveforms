@@ -1,12 +1,10 @@
-const MAIN_CLASS = "main";
-
 var ENV = {
   fftSize: 2048,
   colorSpace: "display-p3",
   sampleRate: 44100,
   baseFrequency: 110,
   alphaExponent: 0,
-  blurFactor: 1,
+  blurFactor: 0.5,
   dpr: window.devicePixelRatio,
   lineWidthStart: 3.3, // start = tail of spiral
   lineWidthEnd: 1, // end = head of spiral
@@ -15,19 +13,8 @@ var ENV = {
   interpolationSpace: "oklch",
   syncPeriodPhase: true,
   smoothingTimeConstant: 1,
-  analyzerWaitDelayMs: 300,
+  analyzerWaitDelayMs: 400,
 };
-
-function infoLog(msg = "") {
-  console.info("[waveflower] " + msg);
-}
-
-function $(selector = "") {
-  return document.querySelector(selector);
-}
-function $all(selector = "") {
-  return document.querySelectorAll(selector);
-}
 
 class AudioSourceManager {
   constructor(
@@ -122,13 +109,9 @@ class AudioSourceManager {
 }
 
 class Visualizer {
-  constructor(
-    sectionID = "#canvases",
-    className = "",
-    analyzer = new AnalyserNode()
-  ) {
-    this.sectionID = sectionID;
-    this.className = className;
+  constructor(canvasClass = "", analyzer = new AnalyserNode()) {
+    this.sectionID = "#canvases";
+    this.canvasClass = canvasClass;
     this.resetCanvasElements();
     const dim = Math.min(window.innerHeight, window.innerWidth);
     this.dim = dim;
@@ -151,14 +134,14 @@ class Visualizer {
     const numPeriods = Math.ceil(
       ENV.fftSize / (ENV.sampleRate / ENV.baseFrequency)
     );
-    const canvasSelector = `${this.sectionID}>canvas`;
+    const canvasSelector = this.sectionID + ">." + this.canvasClass;
     while ($(canvasSelector) != null) {
       $(this.sectionID).removeChild($(canvasSelector));
     }
     for (let i = 0; i < numPeriods; i++) {
       let canvas = document.createElement("canvas");
-      canvas.id = `${i}`;
-      canvas.classList.add(this.className);
+      canvas.id = this.canvasClass + "_" + i;
+      canvas.classList.add(this.canvasClass);
       $(this.sectionID).appendChild(canvas);
     }
     this.canvases = $all(canvasSelector);

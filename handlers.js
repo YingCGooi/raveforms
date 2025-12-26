@@ -1,11 +1,15 @@
+const MAIN_CLASS = "main";
+let replVisualizers = [];
+let intervalID = 0;
+let lastAnimationID = 0;
+
 const manager = new AudioSourceManager();
 window.onload = () => {
   if (params.get("repl")) {
     manager.setREPL($("#repl").editor);
   }
 };
-const visualizer = new Visualizer("#canvases", MAIN_CLASS, manager.analyzer);
-let lastAnimationID = 0;
+const visualizer = new Visualizer(MAIN_CLASS, manager.analyzer);
 
 window.onresize = () => {
   visualizer.resetCanvasElements();
@@ -34,6 +38,13 @@ const drawFrames = (currentTime) => {
     visualizer.clear();
     visualizer.draw();
     lastAnimationID = requestAnimationFrame(drawFrames); // recurse
+  }
+  if (manager.isREPLplaying) {
+    replVisualizers.forEach((v) => {
+      v.clear();
+      v.draw();
+    });
+    lastAnimationID = requestAnimationFrame(drawFrames);
   }
   return lastAnimationID;
 };
@@ -65,13 +76,23 @@ $("#play").addEventListener("click", (e) => {
   );
   if (manager.replHasCode()) {
     manager.playREPL(() => {});
-    setTimeout(() => {
-      const visualizers = [];
+    replVisualizers = []; // reset temp array
+    intervalID = setInterval(() => {
       for (k in analysers) {
-        if (Object.hasOwn(analysers, k)) {
-          visualizers.push(new Visualizer(null, analysers[k]));
+        if (!Object.hasOwn(analysers, k)) {
+          continue;
         }
+        const has = !hasAny(replVisualizers, (v) => v.canvasClass === k);
+        console.info(k, has, replVisualizers);
+        if (!hasAny(replVisualizers, (v) => v.canvasClass === k)) {
+          console.info(k, has, replVisualizers);
+          replVisualizers.push(new Visualizer(k, analysers[k]));
+        }
+        analysers[k].fftSize = ENV.fftSize;
+        analysers[k].sampleRate = ENV.sampleRate;
       }
+    }, 100);
+    setTimeout(() => {
       drawFrames();
     }, ENV.analyzerWaitDelayMs); // wait for 'analysers' object to initialize
     return;
@@ -101,6 +122,7 @@ $("#stop").addEventListener("click", (e) => {
   manager.isFileplaying && manager.stopBuffer();
   infoLog("stop");
   cancelAnimationFrame(lastAnimationID);
+  clearInterval(intervalID);
 });
 
 document.addEventListener("keydown", (e) => {

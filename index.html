@@ -54,14 +54,6 @@
         </label>
         <label title="Set base period interval (1/s)">
           <strong>BASE</strong>
-          <!-- <input
-            type="number"
-            name="base"
-            value="220"
-            min="1"
-            max="1210"
-            placeholder="Hz"
-          /> -->
           <select id="base-select" name="base"></select>
           <script>
             for (let i = 16; i < 70; i++) {
@@ -70,7 +62,7 @@
               const o = document.createElement("option");
               o.value = f;
               o.innerHTML = `${n} = 1/${Math.round(f)}s`;
-              if (f === 110) {
+              if (n === "D#3") {
                 o.selected = true;
               }
               $("[name=base]").appendChild(o);
