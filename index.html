@@ -69,7 +69,7 @@
               const n = midiToNote(i);
               const o = document.createElement("option");
               o.value = f;
-              o.innerHTML = `${n} = ${Math.round(f)}/s`;
+              o.innerHTML = `${n} = 1/${Math.round(f)}s`;
               if (f === 110) {
                 o.selected = true;
               }
