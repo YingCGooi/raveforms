@@ -20,8 +20,11 @@ const base = $("[name=base]");
 base.value = ENV.baseFrequency;
 base.onchange = (e) => {
   ENV.baseFrequency = Number(e.target.value);
-  if (ENV.baseFrequency > 110) {
-    ENV.fftSize / 2;
+  if (ENV.baseFrequency > 110 && ENV.fftSize > 1024) {
+    ENV.fftSize = ENV.fftSize / 2;
+  }
+  if (ENV.baseFrequency <= 110 && ENV.fftSize < 2048) {
+    ENV.fftSize = ENV.fftSize * 2;
   }
   let v = visualizer;
   v.resetCanvasElements();
