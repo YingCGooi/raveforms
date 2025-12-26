@@ -109,9 +109,10 @@ class AudioSourceManager {
 }
 
 class Visualizer {
-  constructor(canvasClass = "", analyzer = new AnalyserNode()) {
+  constructor(canvasClass = "", analyzer = new AnalyserNode(), hueRotate = 0) {
     this.sectionID = "#canvases";
     this.canvasClass = canvasClass;
+    this.hueRotate = hueRotate;
     this.resetCanvasElements();
     const dim = Math.min(window.innerHeight, window.innerWidth);
     this.dim = dim;
@@ -271,6 +272,8 @@ class Visualizer {
   }
 
   calculateColorSteps(start = new Color(), end = new Color(), minSteps = 16) {
+    start.h += this.hueRotate;
+    end.h += this.hueRotate;
     const s = start.steps(end, {
       space: ENV.interpolationSpace,
       outputSpace: ENV.interpolationSpace,

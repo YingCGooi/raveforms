@@ -97,7 +97,9 @@ $("#play").addEventListener("click", (e) => {
         }
         const has = !hasAny(replVisualizers, (v) => v.canvasClass === k);
         if (!hasAny(replVisualizers, (v) => v.canvasClass === k)) {
-          replVisualizers.push(new Visualizer(k, analysers[k]));
+          replVisualizers.push(
+            new Visualizer(k, analysers[k], Number(k.at(-1)) * 90)
+          );
         }
         analysers[k].fftSize = ENV.fftSize;
         analysers[k].sampleRate = ENV.sampleRate;
